@@ -1,10 +1,30 @@
 const express = require('express');
+const http = require('http');
+const path = require('path');
+
 const app = express();
 
-app.get('/', (req, res) => {
-    res.send("hey");
+const socketio = require("socket.io");
+const server = http.createServer(app);
+const io = socketio(server);
+
+app.set("view engine", "ejs");
+app.use(express.static(path.join(__dirname, "public")));
+
+io.on("connection", (socket) => {
+    socket.on("send-location", (data) => {
+        io.emit("receive-location", { id: socket.id, ...data });
+    });
+    
+    socket.on("disconnect", () => {
+        io.emit("user-disconnected", socket.id);
+    })
 })
 
-app.listen(4000, () => {
-    console.log("App is running on port 4000...");
+app.get('/', (req, res) => {
+    res.render("index");
+})
+
+server.listen(8000, () => {
+    console.log("App is running on port 8000...");
 });
